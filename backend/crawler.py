@@ -5,7 +5,7 @@ from collections import deque
 from urllib.parse import urljoin
 from tqdm import tqdm
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from playwright.async_api import async_playwright, Error
 
 from config import SEED_URL, BASE_URL, CRAWL_DELAY, CRAWLED_DATA_FILE, DATA_DIR
@@ -83,11 +83,19 @@ async def crawl():
 
             # Find the 'next' page link for pagination
             next_page_tag = soup.find('a', class_='next')
-            if next_page_tag and 'href' in next_page_tag.attrs:
-                next_page_url = urljoin(BASE_URL, next_page_tag['href'])
-                if next_page_url not in visited_urls:
-                    visited_urls.add(next_page_url)
-                    queue.append(next_page_url)
+            next_page_url = None
+            
+            if isinstance(next_page_tag, Tag) and 'href' in next_page_tag.attrs:
+                href_value = next_page_tag['href']
+                # Handle case where href might be a list
+                if isinstance(href_value, list):
+                    href_value = href_value[0] if href_value else None
+                if href_value:
+                    next_page_url = urljoin(BASE_URL, href_value)
+                    
+            if next_page_url and next_page_url not in visited_urls:
+                visited_urls.add(next_page_url)
+                queue.append(next_page_url)
             
             # Polite crawling: wait before the next request
             await asyncio.sleep(CRAWL_DELAY)

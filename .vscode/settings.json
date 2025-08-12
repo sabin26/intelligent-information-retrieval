@@ -1,0 +1,6 @@
+{
+	"python.analysis.diagnosticSeverityOverrides": {
+		"reportMissingTypeStubs": "none"
+	},
+	"python.analysis.typeCheckingMode": "standard"
+}

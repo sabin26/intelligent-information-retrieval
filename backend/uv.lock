@@ -16,11 +16,11 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "beautifulsoup4", specifier = ">=4.13.4" },
-    { name = "joblib", specifier = ">=1.5.1" },
-    { name = "nltk", specifier = ">=3.9.1" },
-    { name = "playwright", specifier = ">=1.54.0" },
-    { name = "tqdm", specifier = ">=4.67.1" },
+    { name = "beautifulsoup4", specifier = "==4.13.4" },
+    { name = "joblib", specifier = "==1.5.1" },
+    { name = "nltk", specifier = "==3.9.1" },
+    { name = "playwright", specifier = "==1.54.0" },
+    { name = "tqdm", specifier = "==4.67.1" },
 ]
 
 [[package]]
