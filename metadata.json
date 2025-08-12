@@ -1,5 +1,0 @@
-{
-  "name": "Intelligent Information Retrieval",
-  "description": "An interactive application to demonstrate the principles of Information Retrieval, including a vertical search engine (Task 1) and a document classifier (Task 2), as per the ST7071CEM module brief.",
-  "requestFramePermissions": []
-}
