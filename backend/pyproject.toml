@@ -9,5 +9,6 @@ dependencies = [
     "joblib==1.5.1",
     "nltk==3.9.1",
     "playwright==1.54.0",
+    "scikit-learn==1.7.1",
     "tqdm==4.67.1",
 ]
