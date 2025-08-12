@@ -101,7 +101,7 @@ def run_search_interface():
             print(f"\n{i+1}. {res['title']} ({res['year']})")
             
             # Display authors with their profile URLs for easy access
-            print(f"   Authors:")
+            print("   Authors:")
             for author in res['authors']:
                 profile_url = author['url'] if author['url'] else "No profile link"
                 print(f"     - {author['name']} ({profile_url})")
