@@ -1,7 +1,6 @@
 import json
 import joblib
 from collections import defaultdict
-from tqdm import tqdm
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 from config import CRAWLED_DATA_FILE, INDEX_FILE
@@ -35,7 +34,7 @@ def build_index():
     corpus = [] # List of document texts for the vectorizer
 
     print("Building positional index...")
-    for doc_id, doc in enumerate(tqdm(publications, desc="Processing documents")):
+    for doc_id, doc in enumerate(publications):
         author_names = ' '.join([author['name'] for author in doc['authors']])
         content = doc['title'] + ' ' + author_names
         

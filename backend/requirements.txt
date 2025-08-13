@@ -2,5 +2,4 @@ beautifulsoup4==4.13.4
 joblib==1.5.1
 nltk==3.9.1
 playwright==1.54.0
-tqdm==4.67.1
 scikit-learn==1.7.1

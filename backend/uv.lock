@@ -12,7 +12,6 @@ dependencies = [
     { name = "nltk" },
     { name = "playwright" },
     { name = "scikit-learn" },
-    { name = "tqdm" },
 ]
 
 [package.metadata]
@@ -22,7 +21,6 @@ requires-dist = [
     { name = "nltk", specifier = "==3.9.1" },
     { name = "playwright", specifier = "==1.54.0" },
     { name = "scikit-learn", specifier = "==1.7.1" },
-    { name = "tqdm", specifier = "==4.67.1" },
 ]
 
 [[package]]

@@ -3,7 +3,6 @@ import json
 import os
 from collections import deque
 from urllib.parse import urljoin
-from tqdm import tqdm
 
 from bs4 import BeautifulSoup, Tag
 from playwright.async_api import async_playwright, Error
@@ -49,14 +48,18 @@ async def crawl():
             # Find all publication items on the page
             pub_list = soup.find_all('div', class_='result-container')
             
-            # Using tqdm for a progress bar on the publication list
-            for pub_item in tqdm(pub_list, desc=f"Parsing {len(pub_list)} publications"):
+            for pub_item in pub_list:
+                if not isinstance(pub_item, Tag):
+                    continue
                 title_tag = pub_item.find('h3', class_='title')
-                if not title_tag or not title_tag.a:
+                if not title_tag or not isinstance(title_tag, Tag) or not title_tag.a:
                     continue
 
                 title = title_tag.get_text(strip=True)
-                pub_url = urljoin(BASE_URL, title_tag.a['href'])
+                href_value = title_tag.a['href']
+                if isinstance(href_value, list):
+                    href_value = href_value[0] if href_value else ""
+                pub_url = urljoin(BASE_URL, str(href_value))
                 
                 # Find all author tags and extract name and URL
                 authors_data = []
@@ -64,8 +67,11 @@ async def crawl():
                 for author_tag in author_tags:
                     name = author_tag.get_text(strip=True)
                     # Ensure the href attribute exists before creating the full URL
-                    if 'href' in author_tag.attrs:
-                        profile_url = urljoin(BASE_URL, author_tag['href'])
+                    if isinstance(author_tag, Tag) and 'href' in author_tag.attrs:
+                        href_value = author_tag['href']
+                        if isinstance(href_value, list):
+                            href_value = href_value[0] if href_value else ""
+                        profile_url = urljoin(BASE_URL, str(href_value))
                         authors_data.append({'name': name, 'url': profile_url})
                     else:
                         # Fallback for an author link without a URL
