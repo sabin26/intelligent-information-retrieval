@@ -4,8 +4,10 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, classification_report
-from config import DATA_DIR, MODEL_FILE
+from sklearn.metrics import accuracy_score, classification_report, f1_score, confusion_matrix
+from config import DATA_DIR, MODEL_FILE, CONFUSION_MATRIX_FILE
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 def load_data(data_path: str) -> tuple[list, list, list]:
     """
@@ -45,9 +47,29 @@ def load_data(data_path: str) -> tuple[list, list, list]:
     print(f"Loaded {len(texts)} documents.")
     return texts, labels, label_names
 
+def plot_confusion_matrix(cm, class_names, output_filename):
+    """
+    Renders a confusion matrix using Seaborn and saves it to a file.
+    """
+    fig, ax = plt.subplots(figsize=(8, 6))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
+                xticklabels=class_names, yticklabels=class_names)
+    plt.title('Confusion Matrix')
+    plt.ylabel('Actual Category')
+    plt.xlabel('Predicted Category')
+    
+    # Save the figure
+    print(f"\nSaving confusion matrix to {output_filename}...")
+    plt.savefig(output_filename)
+    print("Plot saved.")
+    
+    # Show the plot
+    plt.show()
+
 def train_and_evaluate(texts: list, labels: list, label_names: list):
     """
-    Trains a classifier, evaluates its performance, and returns the trained pipeline.
+    Trains a classifier, evaluates its performance with detailed metrics
+    and plots, and returns the trained pipeline.
     """
     # 1. Split data for evaluation
     X_train, X_test, y_train, y_test = train_test_split(
@@ -70,11 +92,21 @@ def train_and_evaluate(texts: list, labels: list, label_names: list):
     print("\nEvaluating model performance...")
     y_pred = model_pipeline.predict(X_test)
     
+    # Calculate and print Accuracy and F1-Score
     accuracy = accuracy_score(y_test, y_pred)
-    print(f"Accuracy on test set: {accuracy:.4f}")
+    # Use 'macro' average for F1-score to treat all classes equally
+    f1 = f1_score(y_test, y_pred, average='macro') 
     
+    print(f"Accuracy on test set: {accuracy:.4f}")
+    print(f"Macro F1-Score on test set: {f1:.4f}")
+    
+    # Print the detailed Classification Report
     print("\nClassification Report:")
     print(classification_report(y_test, y_pred, target_names=label_names))
+    
+    # Calculate and plot the Confusion Matrix
+    cm = confusion_matrix(y_test, y_pred)
+    plot_confusion_matrix(cm, label_names, CONFUSION_MATRIX_FILE)
     
     # 5. Now, train the final model on ALL data for production use
     print("\nRetraining the model on the full dataset for production...")
