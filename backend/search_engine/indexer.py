@@ -1,6 +1,5 @@
 import json
 import joblib
-from collections import defaultdict
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 from config import CRAWLED_DATA_FILE, INDEX_FILE
@@ -29,7 +28,7 @@ def build_index():
         print("Please run the crawler first using 'python main.py crawl'.")
         return
 
-    positional_index = defaultdict(lambda: defaultdict(list))
+    positional_index = {}
     doc_store = {}
     corpus = [] # List of document texts for the vectorizer
 
@@ -48,6 +47,10 @@ def build_index():
         tokens = process_text(content)
         
         for pos, token in enumerate(tokens):
+            if token not in positional_index:
+                positional_index[token] = {}
+            if doc_id not in positional_index[token]:
+                positional_index[token][doc_id] = []
             positional_index[token][doc_id].append(pos)
 
     # --- TF-IDF Vectorization ---
