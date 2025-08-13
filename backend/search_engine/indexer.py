@@ -1,22 +1,27 @@
 import json
 import joblib
-from collections import defaultdict, Counter
+from collections import defaultdict
 from tqdm import tqdm
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 from config import CRAWLED_DATA_FILE, INDEX_FILE
 from text_processor import process_text
 
 def build_index():
     """
-    Builds an inverted index from the crawled publication data.
-    
-    The function creates and saves three main components:
-    1. Inverted Index: A map from a term to a list of (doc_id, term_frequency) tuples.
-    2. Document Store: A map from doc_id to the document's metadata (title, url, etc.).
-    3. Document Lengths: A map from doc_id to the total number of tokens in the document.
+    Builds a positional index and a TF-IDF model from crawled data.
+
+    The function creates and saves four main components:
+    1. Positional Index: A map from a term to a dictionary, which in turn maps
+       doc_id to a list of positions where the term appears.
+       e.g., {'risk': {0: [3, 15], 2: [8]}}
+    2. Document Store: A map from doc_id to the document's metadata.
+    3. TF-IDF Matrix: A sparse matrix containing TF-IDF vectors for all docs.
+    4. TF-IDF Vectorizer: The fitted TfidfVectorizer object, essential for
+       transforming new queries consistently.
     """
-    print("Starting indexer...")
-    
+    print("Starting indexer for TF-IDF and Positional Index...")
+
     try:
         with open(CRAWLED_DATA_FILE, 'r', encoding='utf-8') as f:
             publications = json.load(f)
@@ -25,44 +30,47 @@ def build_index():
         print("Please run the crawler first using 'python main.py crawl'.")
         return
 
-    # The core data structures for our search engine
-    inverted_index = defaultdict(list)
+    positional_index = defaultdict(lambda: defaultdict(list))
     doc_store = {}
-    doc_lengths = {}
-    
-    # Process each publication
-    for doc_id, doc in enumerate(tqdm(publications, desc="Indexing documents")):
-        # Extract just the names from the author dictionaries for indexing
+    corpus = [] # List of document texts for the vectorizer
+
+    print("Building positional index...")
+    for doc_id, doc in enumerate(tqdm(publications, desc="Processing documents")):
         author_names = ' '.join([author['name'] for author in doc['authors']])
-        # Combine title and authors for the searchable content
         content = doc['title'] + ' ' + author_names
         
         # Store the original document metadata
-        doc_store[doc_id] = {
-            'title': doc['title'],
-            'url': doc['url'],
-            'authors': doc['authors'],
-            'year': doc['year']
-        }
+        doc_store[doc_id] = doc
         
-        # Process the text to get tokens
+        # Add the raw content to the corpus for TF-IDF vectorization
+        corpus.append(content)
+
+        # Process the text to get tokens for the positional index
         tokens = process_text(content)
         
-        # Store the length of the processed document (for BM25)
-        doc_lengths[doc_id] = len(tokens)
-        
-        # Calculate term frequencies for the current document
-        term_counts = Counter(tokens)
-        
-        # Populate the inverted index
-        for term, freq in term_counts.items():
-            inverted_index[term].append((doc_id, freq))
+        for pos, token in enumerate(tokens):
+            positional_index[token][doc_id].append(pos)
 
-    # Save the created index and associated data to a file
+    # --- TF-IDF Vectorization ---
+    print("\nCreating TF-IDF model...")
+    # We use the same text_processor for tokenization to ensure consistency
+    # but let TfidfVectorizer handle its own stopword removal and lowercasing.
+    vectorizer = TfidfVectorizer(
+        stop_words='english',
+        lowercase=True,
+        ngram_range=(1, 2)
+    )
+    
+    # Fit the vectorizer on the whole corpus and transform it into a matrix
+    tfidf_matrix = vectorizer.fit_transform(corpus)
+    print(f"TF-IDF matrix created with shape: {tfidf_matrix.shape}")
+
+    # Save all components needed for searching
     index_data = {
-        'inverted_index': inverted_index,
+        'positional_index': positional_index,
         'doc_store': doc_store,
-        'doc_lengths': doc_lengths
+        'tfidf_matrix': tfidf_matrix,
+        'vectorizer': vectorizer
     }
     
     joblib.dump(index_data, INDEX_FILE)

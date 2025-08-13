@@ -1,69 +1,46 @@
-import math
-from config import BM25_K1, BM25_B
+from sklearn.metrics.pairwise import cosine_similarity
 
-class BM25Ranker:
+class TfIdfRanker:
     """
-    Implements the Okapi BM25 ranking algorithm.
+    Implements ranking based on TF-IDF and Cosine Similarity.
     """
-    def __init__(self, index_data):
+    def __init__(self, vectorizer, tfidf_matrix):
         """
-        Initializes the ranker with the necessary data from the index.
+        Initializes the ranker with the fitted vectorizer and document matrix.
 
         Args:
-            index_data (dict): The dictionary loaded from the index file, containing
-                               'inverted_index', 'doc_store', and 'doc_lengths'.
+            vectorizer: The fitted TfidfVectorizer object.
+            tfidf_matrix: The sparse matrix of TF-IDF vectors for all documents.
         """
-        self.inverted_index = index_data['inverted_index']
-        self.doc_store = index_data['doc_store']
-        self.doc_lengths = index_data['doc_lengths']
-        self.num_docs = len(self.doc_store)
-        self.avg_doc_length = sum(self.doc_lengths.values()) / self.num_docs
-        self.k1 = BM25_K1
-        self.b = BM25_B
+        self.vectorizer = vectorizer
+        self.tfidf_matrix = tfidf_matrix
 
-    def _calculate_idf(self, term: str) -> float:
+    def rank_documents(self, query: str) -> list[tuple[int, float]]:
         """
-        Calculates the Inverse Document Frequency (IDF) for a term.
-        Uses a smoothed version to handle terms not in the corpus.
-        """
-        num_docs_with_term = len(self.inverted_index.get(term, []))
-        # BM25's IDF formula
-        numerator = self.num_docs - num_docs_with_term + 0.5
-        denominator = num_docs_with_term + 0.5
-        return math.log(numerator / denominator + 1.0)
-
-    def score_doc(self, doc_id: int, query_tokens: list[str]) -> float:
-        """
-        Calculates the BM25 score for a single document given a query.
+        Ranks all documents in the corpus against a query.
 
         Args:
-            doc_id (int): The ID of the document to score.
-            query_tokens (list[str]): The preprocessed query tokens.
+            query (str): The user's search query.
 
         Returns:
-            float: The BM25 score.
+            A list of (doc_id, score) tuples, sorted by score descending.
         """
-        score = 0.0
-        doc_len = self.doc_lengths.get(doc_id, 0)
+        if not query:
+            return []
+
+        # 1. Transform the query into a TF-IDF vector using the existing vectorizer
+        query_vector = self.vectorizer.transform([query])
         
-        # Create a map of term frequencies for the given doc_id for quick lookup
-        term_freqs = {}
-        for term in query_tokens:
-            postings = self.inverted_index.get(term, [])
-            for posting_doc_id, freq in postings:
-                if posting_doc_id == doc_id:
-                    term_freqs[term] = freq
-                    break
+        # 2. Compute cosine similarity between the query vector and all doc vectors
+        # This returns a 2D array, so we take the first (and only) row
+        cosine_scores = cosine_similarity(query_vector, self.tfidf_matrix)[0]
         
-        for term in query_tokens:
-            if term in term_freqs:
-                freq = term_freqs[term]
-                idf = self._calculate_idf(term)
-                
-                # BM25's term frequency saturation formula
-                numerator = freq * (self.k1 + 1)
-                denominator = freq + self.k1 * (1 - self.b + self.b * doc_len / self.avg_doc_length)
-                
-                score += idf * (numerator / denominator)
-                
-        return score
+        # 3. Create a list of (doc_id, score) tuples for docs with score > 0
+        doc_scores = [
+            (doc_id, score) for doc_id, score in enumerate(cosine_scores) if score > 0
+        ]
+        
+        # 4. Sort the documents by score in descending order
+        doc_scores.sort(key=lambda x: x[1], reverse=True)
+        
+        return doc_scores

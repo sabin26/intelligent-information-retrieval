@@ -11,7 +11,3 @@ CRAWL_DELAY = 2
 DATA_DIR = "data"
 CRAWLED_DATA_FILE = f"{DATA_DIR}/crawled_publications.json"
 INDEX_FILE = f"{DATA_DIR}/index.joblib"
-
-# BM25 ranking parameters
-BM25_K1 = 1.5
-BM25_B = 0.75
