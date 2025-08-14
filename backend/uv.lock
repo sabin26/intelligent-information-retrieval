@@ -11,9 +11,11 @@ dependencies = [
     { name = "joblib" },
     { name = "matplotlib" },
     { name = "nltk" },
+    { name = "pandas" },
     { name = "playwright" },
     { name = "scikit-learn" },
     { name = "seaborn" },
+    { name = "tqdm" },
 ]
 
 [package.metadata]
@@ -22,9 +24,11 @@ requires-dist = [
     { name = "joblib", specifier = "==1.5.1" },
     { name = "matplotlib", specifier = "==3.10.5" },
     { name = "nltk", specifier = "==3.9.1" },
+    { name = "pandas", specifier = "==2.3.1" },
     { name = "playwright", specifier = "==1.54.0" },
     { name = "scikit-learn", specifier = "==1.7.1" },
     { name = "seaborn", specifier = "==0.13.2" },
+    { name = "tqdm", specifier = "==4.67.1" },
 ]
 
 [[package]]
