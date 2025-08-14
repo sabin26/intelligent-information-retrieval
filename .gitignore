@@ -24,4 +24,6 @@ dist-ssr
 
 __pycache__
 .venv
-backend/*/data
+
+backend/*/data/*.json
+backend/*/data/*.joblib
