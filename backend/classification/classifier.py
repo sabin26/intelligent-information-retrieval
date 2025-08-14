@@ -1,67 +1,72 @@
 import os
 import joblib
+import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report, f1_score, confusion_matrix
-from config import DATA_DIR, MODEL_FILE, CONFUSION_MATRIX_FILE
+from config import DATA_FILE, MODEL_FILE
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-def load_data(data_path: str) -> tuple[list, list, list]:
+def load_data_from_csv(file_path: str) -> tuple[list, list, list]:
     """
-    Loads text data from a directory structure.
+    Loads and processes data from a CSV file.
 
-    Assumes that `data_path` contains subdirectories, where each subdirectory
-    is a category, and each file in it is a document.
+    The CSV is expected to have 'Title', 'Content', and 'Category' columns.
+    'Title' and 'Content' are combined to form the document text.
 
     Args:
-        data_path (str): The path to the data directory.
+        file_path (str): The path to the CSV data file.
 
     Returns:
         A tuple containing:
-        - texts (list): A list of document texts.
-        - labels (list): A list of numerical labels corresponding to the texts.
+        - texts (list): A list of combined document texts.
+        - labels (list): A list of numerical labels.
         - label_names (list): A list of the string names of the labels.
     """
-    texts = []
-    labels = []
-    label_names = sorted([d for d in os.listdir(data_path) if os.path.isdir(os.path.join(data_path, d))])
-    label_map = {name: i for i, name in enumerate(label_names)}
+    try:
+        df = pd.read_csv(file_path)
+    except FileNotFoundError:
+        print(f"Error: Data file not found at '{file_path}'.")
+        print("Please make sure the CSV file is in the same directory.")
+        return list(), list(), list()
 
-    print(f"Loading data... Found categories: {label_names}")
+    print("--- Data Loaded Successfully ---")
+    print("DataFrame Info:")
+    df.info()
+    print("\nFirst 5 rows of the DataFrame:")
+    print(df.head())
+    print("-" * 30)
 
-    for label_name in label_names:
-        category_path = os.path.join(data_path, label_name)
-        for filename in os.listdir(category_path):
-            if filename.endswith(".txt"):
-                file_path = os.path.join(category_path, filename)
-                try:
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        texts.append(f.read())
-                        labels.append(label_map[label_name])
-                except Exception as e:
-                    print(f"Warning: Could not read file {file_path}: {e}")
+    # Drop rows with missing values in key columns
+    df.dropna(subset=['Title', 'Content', 'Category'], inplace=True)
+    
+    # Combine Title and Content into a single text feature
+    df['text'] = df['Title'] + " " + df['Content']
+    
+    texts = df['text'].tolist()
+    
+    # Convert string labels to numerical labels
+    # pd.factorize: it returns integer codes and the unique labels
+    labels, label_names = pd.factorize(df['Category'])
     
     print(f"Loaded {len(texts)} documents.")
-    return texts, labels, label_names
+    print(f"Found categories: {list(label_names)}")
+    
+    return texts, labels.tolist(), list(label_names)
 
-def plot_confusion_matrix(cm, class_names, output_filename):
+def plot_confusion_matrix(cm, class_names):
     """
-    Renders a confusion matrix using Seaborn and saves it to a file.
+    Renders a confusion matrix using Seaborn.
     """
     fig, ax = plt.subplots(figsize=(8, 6))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
-                xticklabels=class_names, yticklabels=class_names)
+                xticklabels=class_names, yticklabels=class_names, ax=ax)
     plt.title('Confusion Matrix')
     plt.ylabel('Actual Category')
     plt.xlabel('Predicted Category')
-    
-    # Save the figure
-    print(f"\nSaving confusion matrix to {output_filename}...")
-    plt.savefig(output_filename)
-    print("Plot saved.")
     
     # Show the plot
     plt.show()
@@ -106,7 +111,7 @@ def train_and_evaluate(texts: list, labels: list, label_names: list):
     
     # Calculate and plot the Confusion Matrix
     cm = confusion_matrix(y_test, y_pred)
-    plot_confusion_matrix(cm, label_names, CONFUSION_MATRIX_FILE)
+    plot_confusion_matrix(cm, label_names)
     
     # 5. Now, train the final model on ALL data for production use
     print("\nRetraining the model on the full dataset for production...")
@@ -117,7 +122,7 @@ def train_and_evaluate(texts: list, labels: list, label_names: list):
 def main():
     """
     Main function to run the classifier.
-    It loads a pre-trained model or trains a new one if not found.
+    It loads a pre-trained model or trains a new one from the CSV file.
     """
     classifier = None
     label_names = []
@@ -130,12 +135,12 @@ def main():
         label_names = data['labels']
         print("Model loaded successfully.")
     else:
-        print("No pre-trained model found. Training a new one.")
-        # Load data from the directory structure
-        texts, labels, label_names_from_data = load_data(DATA_DIR)
+        print("No pre-trained model found. Training a new one from CSV.")
+        # Load data from CSV
+        texts, labels, label_names_from_data = load_data_from_csv(DATA_FILE)
         
         if not texts:
-            print("\nError: No data found. Please follow the instructions in README_DATA.md")
+            print("\nExiting: Could not load data.")
             return
             
         label_names = label_names_from_data
