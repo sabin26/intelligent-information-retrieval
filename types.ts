@@ -12,11 +12,6 @@ export enum DocCategory {
 	Unknown = 'Unknown',
 }
 
-export enum IndexingStrategy {
-	Inverted = 'INVERTED',
-	Positional = 'POSITIONAL',
-}
-
 export interface Author {
 	name: string
 	profileUrl?: string

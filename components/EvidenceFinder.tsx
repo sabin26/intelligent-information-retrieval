@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Task1Data, Publication, IndexingStrategy } from '../types'
+import { Task1Data, Publication } from '../types'
 import { SearchIcon, CheckCircleIcon, UserIcon } from './icons'
 import { getTaskData } from '../services/gameService'
 import Loader from './Loader'
@@ -17,9 +17,6 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 	const [foundPublications, setFoundPublications] = useState<
 		Publication[] | null
 	>(null)
-	const [indexingStrategy, setIndexingStrategy] = useState<IndexingStrategy>(
-		IndexingStrategy.Inverted
-	)
 	const [searchAttempted, setSearchAttempted] = useState(false)
 
 	const handleSearch = useCallback(
@@ -34,32 +31,18 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 
 			setTimeout(() => {
 				const queryLower = query.toLowerCase().trim()
-				let isMatch = false
-
-				if (indexingStrategy === IndexingStrategy.Positional) {
-					const expectedPhrase = taskData.expectedKeywords.join(' ')
-					isMatch = queryLower.includes(expectedPhrase)
-				} else {
-					isMatch = taskData.expectedKeywords.every((kw) =>
-						queryLower.includes(kw)
-					)
-				}
+				const expectedPhrase = taskData.expectedKeywords.join(' ')
+				const isMatch = queryLower.includes(expectedPhrase)
 
 				if (isMatch) {
 					setFoundPublications(taskData.mockPublications)
 				} else {
-					setError(
-						`No relevant publications found for that query using the ${
-							indexingStrategy === IndexingStrategy.Positional
-								? 'Positional'
-								: 'Inverted'
-						} Index. Please try searching for keywords mentioned in the task description.`
-					)
+					setError(`No relevant publications found for that query.`)
 				}
 				setIsLoading(false)
 			}, 1500)
 		},
-		[query, taskData, indexingStrategy]
+		[query, taskData]
 	)
 
 	const handleResetSearch = () => {
@@ -68,33 +51,6 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 		setError(null)
 		setQuery('')
 	}
-
-	const IndexingStrategyToggle: React.FC = () => (
-		<div className="flex items-center justify-center bg-slate-200/60 p-1 rounded-lg mb-6">
-			<button
-				onClick={() => setIndexingStrategy(IndexingStrategy.Inverted)}
-				className={`w-1/2 py-2 text-sm font-semibold rounded-md transition-colors duration-200 ${
-					indexingStrategy === IndexingStrategy.Inverted
-						? 'bg-white shadow text-slate-800'
-						: 'text-slate-500 hover:bg-slate-200'
-				} disabled:opacity-60 disabled:cursor-not-allowed`}
-				disabled={isLoading || searchAttempted}
-			>
-				Inverted Index
-			</button>
-			<button
-				onClick={() => setIndexingStrategy(IndexingStrategy.Positional)}
-				className={`w-1/2 py-2 text-sm font-semibold rounded-md transition-colors duration-200 ${
-					indexingStrategy === IndexingStrategy.Positional
-						? 'bg-white shadow text-slate-800'
-						: 'text-slate-500 hover:bg-slate-200'
-				} disabled:opacity-60 disabled:cursor-not-allowed`}
-				disabled={isLoading || searchAttempted}
-			>
-				Positional Index
-			</button>
-		</div>
-	)
 
 	return (
 		<div className="bg-white/80 backdrop-blur-sm p-6 sm:p-8 rounded-lg shadow-lg border border-slate-200/80">
@@ -105,7 +61,12 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 				{taskData.prompt}
 			</p>
 
-			<IndexingStrategyToggle />
+			<div className="mb-6">
+				<div className="inline-flex items-center bg-amber-100 text-amber-800 text-sm font-bold px-4 py-2 rounded-full shadow-sm">
+					Crawling + Positional Indexing + TF-IDF Ranking with Cosine
+					Similarity
+				</div>
+			</div>
 
 			<form
 				onSubmit={handleSearch}
