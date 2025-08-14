@@ -117,7 +117,7 @@ class SearchEngine:
                 'title': doc_info['title'],
                 'url': doc_info['url'],
                 'authors': doc_info['authors'],
-                'year': doc_info['year']
+                'date': doc_info['date']
             })
         return results
 
@@ -144,7 +144,7 @@ def run_search_interface():
             
         print(f"\nFound {len(results)} results for '{query}':")
         for i, res in enumerate(results):
-            print(f"\n{i+1}. {res['title']} ({res['year']})")
+            print(f"\n{i+1}. {res['title']} ({res['date']})")
             print("   Authors:")
             for author in res['authors']:
                 profile_url = author['url'] if author['url'] else "No profile link"
