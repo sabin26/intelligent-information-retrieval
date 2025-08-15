@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup, Tag
 from playwright.async_api import async_playwright, Error
 from tqdm import tqdm
 
-from config import SEED_URL, BASE_URL, MAX_RETRIES, PAGE_TIMEOUT, RANDOM_DELAY_RANGE, CRAWLED_DATA_FILE, DATA_DIR
+from config import SEED_URL, BASE_URL, MAX_RETRIES, PAGE_TIMEOUT, RANDOM_DELAY_RANGE, CRAWLED_DATA_FILE
 
 # --- Extract author name and profile url from publication url ---
 def extract_authors_from_detail_page(soup, base_url):
@@ -46,8 +46,9 @@ async def crawl():
         )
 
         # Ensure the data directory exists
-        if not os.path.exists(DATA_DIR):
-            os.makedirs(DATA_DIR)
+        data_dir = os.path.dirname(CRAWLED_DATA_FILE)
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir)
 
         # PHASE 1: DISCOVER ALL PUBLICATION URLS
         print("\n--- Phase 1: Discovering all publication URLs ---")

@@ -1,3 +1,5 @@
+import os
+
 # The starting point for our crawler
 SEED_URL = "https://pureportal.coventry.ac.uk/en/organisations/fbl-school-of-economics-finance-and-accounting/publications/"
 
@@ -14,6 +16,5 @@ MAX_RETRIES = 3
 PAGE_TIMEOUT = 90000
 
 # Paths for storing data
-DATA_DIR = "data"
-CRAWLED_DATA_FILE = f"{DATA_DIR}/crawled_publications.json"
-INDEX_FILE = f"{DATA_DIR}/index.joblib"
+CRAWLED_DATA_FILE = os.path.join(os.path.dirname(__file__), 'data', 'crawled_publications.json')
+INDEX_FILE = os.path.join(os.path.dirname(__file__), 'data', 'index.joblib')

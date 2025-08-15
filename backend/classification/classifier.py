@@ -6,9 +6,23 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report, f1_score, confusion_matrix
-from config import DATA_FILE, MODEL_FILE
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+DATA_FILE = os.path.join(os.path.dirname(__file__), 'data', 'cleaned_data.csv')
+MODEL_FILE = os.path.join(os.path.dirname(__file__), 'data', 'document_classifier.joblib')
+
+def load_classifier_and_labels():
+    """
+    Loads the pre-trained classifier model and its corresponding label names.
+    """
+    if not os.path.exists(MODEL_FILE):
+        raise FileNotFoundError(f"Model file not found at {MODEL_FILE}. Please run classifier.py to train and create it.")
+    
+    data = joblib.load(MODEL_FILE)
+    classifier = data['model']
+    label_names = data['labels']
+    return classifier, label_names
 
 def load_data_from_csv(file_path: str) -> tuple[list, list, list]:
     """
@@ -121,20 +135,16 @@ def train_and_evaluate(texts: list, labels: list, label_names: list):
 
 def main():
     """
-    Main function to run the classifier.
-    It loads a pre-trained model or trains a new one from the CSV file.
+    Main function to run the classifier from the command line.
     """
     classifier = None
     label_names = []
 
-    # Check if a trained model already exists
-    if os.path.exists(MODEL_FILE):
-        print(f"Loading pre-trained model from {MODEL_FILE}...")
-        data = joblib.load(MODEL_FILE)
-        classifier = data['model']
-        label_names = data['labels']
+    try:
+        print(f"Attempting to load pre-trained model from {MODEL_FILE}...")
+        classifier, label_names = load_classifier_and_labels()
         print("Model loaded successfully.")
-    else:
+    except FileNotFoundError:
         print("No pre-trained model found. Training a new one from CSV.")
         # Load data from CSV
         texts, labels, label_names_from_data = load_data_from_csv(DATA_FILE)
