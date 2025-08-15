@@ -1,8 +1,6 @@
-# Run and deploy your app
+# Run and deploy the app
 
-This contains everything you need to run your app locally.
-
-## Run Locally
+## Run FrontEnd
 
 **Prerequisites:** Node.js
 
@@ -10,3 +8,12 @@ This contains everything you need to run your app locally.
    `npm install`
 2. Run the app:
    `npm run dev`
+
+## Run Backend
+
+**Prerequisites:** Python | uv
+
+1. Install dependencies:
+   `pip install -r backend/requirements.txt`
+2. Run the app:
+   `python fastapi dev backend/api.py`
