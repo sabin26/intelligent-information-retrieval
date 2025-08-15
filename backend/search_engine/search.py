@@ -73,7 +73,7 @@ class SearchEngine:
         
         return candidate_docs
         
-    def search(self, query: str, top_k: int = 10):
+    def search(self, query: str, top_k: int = 1000):
         """
         Performs a search for a given query.
         
