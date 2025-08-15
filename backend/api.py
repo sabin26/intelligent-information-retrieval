@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
 from search_engine import SearchEngine
@@ -31,6 +32,21 @@ async def lifespan(app: FastAPI):
 
 # Initialize the FastAPI app with the lifespan manager
 app = FastAPI(lifespan=lifespan)
+
+# List of allowed origins
+origins = [
+    "http://localhost:5173",  # React/Vite frontend
+    "http://127.0.0.1:5173"   # In case vite serves with 127.0.0.1
+]
+
+# Add the CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins, # Allowed frontend origins
+    allow_credentials=True,
+    allow_methods=["*"], # Allow all HTTP methods
+    allow_headers=["*"], # Allow all headers
+)
 
 # --- Define Pydantic models for request and response bodies ---
 

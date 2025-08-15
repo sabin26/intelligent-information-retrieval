@@ -1,8 +1,20 @@
 import joblib
+from typing import List, Optional, TypedDict
 
 from config import INDEX_FILE
 from text_processor import process_text
 from ranker import TfIdfRanker
+
+class Author(TypedDict):
+    name: str
+    profileUrl: Optional[str]
+
+class Publication(TypedDict):
+    title: str
+    authors: List[Author]
+    date: str
+    publicationUrl: str
+    relevancyScore: float
 
 class SearchEngine:
     """
@@ -109,16 +121,25 @@ class SearchEngine:
             scores = self.ranker.rank_documents(search_query)
 
         # 2. Format and return the top_k results
-        results = []
+        results: List[Publication] = []
         for doc_id, score in scores[:top_k]:
             doc_info = self.doc_store[doc_id]
-            results.append({
-                'score': round(score, 4),
-                'title': doc_info['title'],
-                'url': doc_info['url'],
-                'authors': doc_info['authors'],
-                'date': doc_info['date']
-            })
+            
+            # Format authors to match the Author interface
+            formatted_authors: List[Author] = [
+                {"name": author["name"], "profileUrl": author.get("url")}
+                for author in doc_info.get("authors", [])
+            ]
+            
+            # Create the publication object with the correct keys
+            publication: Publication = {
+                "title": doc_info.get("title", "No Title"),
+                "authors": formatted_authors,
+                "date": doc_info.get("date", "N/A"),
+                "publicationUrl": doc_info.get("url", ""),
+                "relevancyScore": round(score, 4)
+            }
+            results.append(publication)
         return results
 
 def run_search_interface():
@@ -147,10 +168,10 @@ def run_search_interface():
             print(f"\n{i+1}. {res['title']} ({res['date']})")
             print("   Authors:")
             for author in res['authors']:
-                profile_url = author['url'] if author['url'] else "No profile link"
+                profile_url = author['profileUrl'] if author['profileUrl'] else "No profile link"
                 print(f"     - {author['name']} ({profile_url})")
-            print(f"   Publication URL: {res['url']}")
-            print(f"   Cosine Similarity Score: {res['score']}")
+            print(f"   Publication URL: {res['publicationUrl']}")
+            print(f"   Cosine Similarity Score: {res['relevancyScore']}")
 
 if __name__ == '__main__':
     run_search_interface()
