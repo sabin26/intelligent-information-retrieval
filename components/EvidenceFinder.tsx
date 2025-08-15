@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Publication } from '../types'
 import { SearchIcon, CheckCircleIcon, UserIcon, BookIcon } from './icons'
@@ -9,6 +9,8 @@ interface Task1Props {
 	onComplete: () => void
 }
 
+const ITEMS_PER_PAGE = 20
+
 const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 	const [query, setQuery] = useState('')
 	const [isLoading, setIsLoading] = useState(false)
@@ -17,6 +19,8 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 		[]
 	)
 	const [searchAttempted, setSearchAttempted] = useState(false)
+	const [currentPage, setCurrentPage] = useState(1)
+	const componentRootRef = useRef<HTMLDivElement>(null)
 
 	const handleSearch = useCallback(
 		async (e: React.FormEvent) => {
@@ -27,6 +31,7 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 			setIsLoading(true)
 			setError(null)
 			setFoundPublications([])
+			setCurrentPage(1)
 
 			try {
 				const { publications } = await searchPublications(query)
@@ -49,10 +54,33 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 		setFoundPublications([])
 		setError(null)
 		setQuery('')
+		setCurrentPage(1)
 	}
 
+	// Pagination logic
+	const totalPages = Math.ceil(foundPublications.length / ITEMS_PER_PAGE)
+	const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+	const endIndex = startIndex + ITEMS_PER_PAGE
+	const currentPublications = foundPublications.slice(startIndex, endIndex)
+
+	const handlePageChange = (newPage: number) => {
+		setCurrentPage(newPage)
+	}
+
+	useEffect(() => {
+		if (searchAttempted) {
+			componentRootRef.current?.scrollIntoView({
+				behavior: 'smooth',
+				block: 'start',
+			})
+		}
+	}, [currentPage])
+
 	return (
-		<div className="bg-white/80 backdrop-blur-sm p-6 sm:p-8 rounded-lg shadow-lg border border-slate-200/80">
+		<div
+			ref={componentRootRef}
+			className="bg-white/80 backdrop-blur-sm p-6 sm:p-8 rounded-lg shadow-lg border border-slate-200/80"
+		>
 			<h3 className="text-xl font-bold text-slate-800 font-display tracking-wide">
 				Task 1: Vertical Search Engine
 			</h3>
@@ -136,7 +164,7 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 						</motion.div>
 					)}
 
-				{searchAttempted && foundPublications.length > 0 && (
+				{searchAttempted && currentPublications.length > 0 && (
 					<motion.div
 						initial={{ opacity: 0, y: 10 }}
 						animate={{ opacity: 1, y: 0 }}
@@ -150,13 +178,13 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 							</p>
 						</div>
 						<div className="space-y-4 mt-4">
-							{foundPublications.map((pub, index) => (
+							{currentPublications.map((pub, index) => (
 								<motion.div
-									key={index}
+									key={pub.publicationUrl}
 									className="p-4 border border-slate-300 rounded-lg bg-white shadow"
 									initial={{ opacity: 0, x: -20 }}
 									animate={{ opacity: 1, x: 0 }}
-									transition={{ delay: index * 0.2 + 0.5 }}
+									transition={{ delay: index * 0.1 }}
 								>
 									<div className="flex justify-between items-start">
 										<a
@@ -207,6 +235,32 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 								</motion.div>
 							))}
 						</div>
+
+						{totalPages > 1 && (
+							<div className="flex justify-between items-center mt-6 pt-4 border-t border-slate-200">
+								<button
+									onClick={() =>
+										handlePageChange(currentPage - 1)
+									}
+									disabled={currentPage === 1}
+									className="px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-md shadow-sm hover:bg-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition"
+								>
+									Previous
+								</button>
+								<span className="text-sm font-medium text-slate-600">
+									Page {currentPage} of {totalPages}
+								</span>
+								<button
+									onClick={() =>
+										handlePageChange(currentPage + 1)
+									}
+									disabled={currentPage === totalPages}
+									className="px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-md shadow-sm hover:bg-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition"
+								>
+									Next
+								</button>
+							</div>
+						)}
 					</motion.div>
 				)}
 			</AnimatePresence>
