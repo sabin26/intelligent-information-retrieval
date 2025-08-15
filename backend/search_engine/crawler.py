@@ -79,7 +79,9 @@ async def crawl():
                     print(f"\nAttempt {attempt + 1}/{MAX_RETRIES} failed for {current_url}: {e}")
                     if attempt < MAX_RETRIES - 1:
                         print('Retrying...')
-                        await asyncio.sleep(5) # Wait before retrying
+                        # Wait before retrying
+                        delay = random.uniform(*RANDOM_DELAY_RANGE)
+                        await asyncio.sleep(delay)
 
             if not success:
                 print(f"All retries failed for {current_url}. Skipping page.")
@@ -138,7 +140,10 @@ async def crawl():
                     except Error as e:
                         print(f"\nAttempt {attempt + 1}/{MAX_RETRIES} failed for {pub_data['url']}: {e}")
                         if attempt < MAX_RETRIES - 1:
-                            await asyncio.sleep(5) # Wait before retrying
+                            print('Retrying...')
+                            # Wait before retrying
+                            delay = random.uniform(*RANDOM_DELAY_RANGE)
+                            await asyncio.sleep(delay)
                 
                 if not success:
                     print(f"All retries failed for {pub_data['url']}. Saving without author data.")

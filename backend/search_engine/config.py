@@ -7,7 +7,7 @@ SEED_URL = "https://pureportal.coventry.ac.uk/en/organisations/fbl-school-of-eco
 BASE_URL = "https://pureportal.coventry.ac.uk"
 
 # Random delay in seconds between page loads
-RANDOM_DELAY_RANGE = (2, 5)
+RANDOM_DELAY_RANGE = (1, 3)
 
 # Maximum number of retries if first attempt fails
 MAX_RETRIES = 3
