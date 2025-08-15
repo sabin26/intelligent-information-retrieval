@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Task1Data, Publication } from '../types'
-import { SearchIcon, CheckCircleIcon, UserIcon } from './icons'
-import { getTaskData } from '../services/gameService'
+import { Publication } from '../types'
+import { SearchIcon, CheckCircleIcon, UserIcon, BookIcon } from './icons'
+import { searchPublications } from '../services/apiService'
 import Loader from './Loader'
 
 interface Task1Props {
@@ -10,44 +10,43 @@ interface Task1Props {
 }
 
 const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
-	const [taskData] = useState<Task1Data>(getTaskData().task1)
 	const [query, setQuery] = useState('')
 	const [isLoading, setIsLoading] = useState(false)
 	const [error, setError] = useState<string | null>(null)
-	const [foundPublications, setFoundPublications] = useState<
-		Publication[] | null
-	>(null)
+	const [foundPublications, setFoundPublications] = useState<Publication[]>(
+		[]
+	)
 	const [searchAttempted, setSearchAttempted] = useState(false)
 
 	const handleSearch = useCallback(
-		(e: React.FormEvent) => {
+		async (e: React.FormEvent) => {
 			e.preventDefault()
 			if (!query.trim()) return
 
 			setSearchAttempted(true)
 			setIsLoading(true)
 			setError(null)
-			setFoundPublications(null)
+			setFoundPublications([])
 
-			setTimeout(() => {
-				const queryLower = query.toLowerCase().trim()
-				const expectedPhrase = taskData.expectedKeywords.join(' ')
-				const isMatch = queryLower.includes(expectedPhrase)
-
-				if (isMatch) {
-					setFoundPublications(taskData.mockPublications)
-				} else {
-					setError(`No relevant publications found for that query.`)
-				}
+			try {
+				const { publications } = await searchPublications(query)
+				setFoundPublications(publications)
+			} catch (err) {
+				setError(
+					err instanceof Error
+						? err.message
+						: 'An unknown error occurred.'
+				)
+			} finally {
 				setIsLoading(false)
-			}, 1500)
+			}
 		},
-		[query, taskData]
+		[query]
 	)
 
 	const handleResetSearch = () => {
 		setSearchAttempted(false)
-		setFoundPublications(null)
+		setFoundPublications([])
 		setError(null)
 		setQuery('')
 	}
@@ -58,7 +57,8 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 				Task 1: Vertical Search Engine
 			</h3>
 			<p className="text-sm text-slate-600 mt-1 mb-6">
-				{taskData.prompt}
+				Find research papers, articles, and publications from Coventry
+				University's FBL School of Economics, Finance and Accounting.
 			</p>
 
 			<div className="mb-6">
@@ -82,13 +82,20 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 						onChange={(e) => setQuery(e.target.value)}
 						placeholder="Search for publications..."
 						className="w-full pl-10 pr-4 py-2.5 border border-slate-400 rounded-md shadow-inner bg-slate-50 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition disabled:opacity-60 disabled:bg-slate-100"
-						disabled={isLoading || searchAttempted}
+						disabled={
+							isLoading ||
+							(searchAttempted && foundPublications.length > 0)
+						}
 					/>
 				</div>
 				<motion.button
 					type="submit"
 					className="px-6 py-2.5 bg-slate-800 text-white font-semibold rounded-md shadow-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
-					disabled={isLoading || searchAttempted || !query.trim()}
+					disabled={
+						isLoading ||
+						(searchAttempted && foundPublications.length > 0) ||
+						!query.trim()
+					}
 					whileHover={{ scale: 1.05 }}
 					whileTap={{ scale: 0.95 }}
 				>
@@ -102,12 +109,34 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 						<Loader />
 					</div>
 				)}
-				{searchAttempted && error && !isLoading && (
+
+				{searchAttempted && !isLoading && error && (
 					<p className="text-sm text-red-600 text-center mt-4">
 						{error}
 					</p>
 				)}
-				{searchAttempted && foundPublications && (
+
+				{searchAttempted &&
+					!isLoading &&
+					!error &&
+					foundPublications.length === 0 && (
+						<motion.div
+							initial={{ opacity: 0, y: 10 }}
+							animate={{ opacity: 1, y: 0 }}
+							className="text-center py-10 px-4 bg-slate-50 rounded-lg mt-4"
+						>
+							<BookIcon className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+							<h3 className="text-lg font-medium text-slate-700">
+								No Publications Found
+							</h3>
+							<p className="text-sm text-slate-500 mt-1">
+								Try refining your search query for better
+								results.
+							</p>
+						</motion.div>
+					)}
+
+				{searchAttempted && foundPublications.length > 0 && (
 					<motion.div
 						initial={{ opacity: 0, y: 10 }}
 						animate={{ opacity: 1, y: 0 }}
@@ -116,7 +145,8 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 						<div className="flex items-center justify-center gap-2 text-green-700 bg-green-100 p-3 rounded-md">
 							<CheckCircleIcon className="w-6 h-6" />
 							<p className="font-bold">
-								Search Complete! Publications Found.
+								Search Complete! {foundPublications.length}{' '}
+								publication(s) found.
 							</p>
 						</div>
 						<div className="space-y-4 mt-4">
@@ -151,7 +181,7 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 										)}
 									</div>
 									<p className="text-sm text-slate-500 mt-1">
-										{pub.year}
+										{pub.date}
 									</p>
 									<div className="mt-2 flex items-center gap-2 flex-wrap text-sm text-slate-700">
 										<UserIcon className="w-4 h-4 text-slate-500" />
@@ -192,7 +222,7 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 						Search Again
 					</motion.button>
 
-					{foundPublications && (
+					{foundPublications.length > 0 && (
 						<motion.button
 							onClick={onComplete}
 							className="px-8 py-3 bg-amber-600 text-white font-bold rounded-lg shadow-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-colors font-display tracking-wider"

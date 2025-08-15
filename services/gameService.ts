@@ -4,30 +4,7 @@ const taskData: TaskData = {
 	id: 'ST7071CEM',
 	title: 'Intelligent Information Retrieval Tasks',
 	description:
-		'This application demonstrates the two primary tasks required by the module coursework: creating a vertical search engine and a document classification system.',
-	task1: {
-		prompt: 'Your first task is to create a vertical search engine. For this demonstration, find publications related to "financial risk".',
-		expectedKeywords: ['financial', 'risk'],
-		mockPublications: [
-			{
-				title: 'Assessing Risk in Emerging Financial Markets',
-				authors: [{ name: 'Dr. Evelyn Reed', profileUrl: '#' }],
-				year: '2023',
-				publicationUrl: '#',
-				relevancyScore: 0.92,
-			},
-			{
-				title: 'A Framework for Financial Risk Management in the Tech Sector',
-				authors: [
-					{ name: 'Dr. Evelyn Reed', profileUrl: '#' },
-					{ name: 'Prof. Samuel Jones', profileUrl: '#' },
-				],
-				year: '2022',
-				publicationUrl: '#',
-				relevancyScore: 0.87,
-			},
-		],
-	},
+		"This application demonstrates two primary tasks: a vertical search engine and a document classification system. The first task allows users to search for publications from Coventry University's FBL School of Economics, Finance and Accounting. The second task enables users to classify documents into categories such as Health, Business, and Politics.",
 }
 
 export const getTaskData = (): TaskData => {

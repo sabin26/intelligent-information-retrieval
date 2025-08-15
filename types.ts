@@ -20,40 +20,18 @@ export interface Author {
 export interface Publication {
 	title: string
 	authors: Author[]
-	year: string
+	date: string
 	publicationUrl: string
 	relevancyScore?: number
-}
-
-// --- Task-specific interfaces ---
-
-export interface Task1Data {
-	prompt: string
-	expectedKeywords: string[]
-	mockPublications: Publication[]
 }
 
 export interface TaskData {
 	id: string
 	title: string
 	description: string
-	task1: Task1Data
 }
 
 export interface ClassificationResult {
 	category: DocCategory
-	confidence?: number
-}
-
-export interface WebChunk {
-	uri: string
-	title: string
-}
-
-export interface GroundingChunk {
-	web?: WebChunk
-}
-
-export interface GroundingMetadata {
-	groundingChunks?: GroundingChunk[]
+	confidence: number
 }

@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { DocCategory, ClassificationResult } from '../types'
 import { BrainCircuitIcon } from './icons'
 import Loader from './Loader'
+import Alert from './Alert'
+import { classifyDocument } from '../services/apiService'
 
 interface Task2Props {
 	onComplete: () => void
@@ -13,52 +15,34 @@ const Task2_DocumentClassifier: React.FC<Task2Props> = ({ onComplete }) => {
 	const [result, setResult] = useState<ClassificationResult | null>(null)
 	const [isLoading, setIsLoading] = useState<boolean>(false)
 	const [classified, setClassified] = useState<boolean>(false)
+	const [error, setError] = useState<string | null>(null)
 
-	const classifyText = (text: string): ClassificationResult => {
-		const lowerText = text.toLowerCase()
-		let category = DocCategory.Unknown
-		let confidence = Math.random() * (0.65 - 0.4) + 0.4
-
-		if (
-			/\b(politics|government|election|bill|senate|law)\b/.test(lowerText)
-		) {
-			category = DocCategory.Politics
-			confidence = Math.random() * (0.98 - 0.8) + 0.8
-		} else if (
-			/\b(business|market|stock|profits|investment|corporate|economic)\b/.test(
-				lowerText
-			)
-		) {
-			category = DocCategory.Business
-			confidence = Math.random() * (0.97 - 0.82) + 0.82
-		} else if (
-			/\b(health|doctor|wellness|cardiovascular|medical|hospital)\b/.test(
-				lowerText
-			)
-		) {
-			category = DocCategory.Health
-			confidence = Math.random() * (0.99 - 0.85) + 0.85
-		}
-
-		return { category, confidence }
-	}
-
-	const handleClassify = () => {
+	const handleClassify = async () => {
 		if (!documentText.trim()) return
 		setIsLoading(true)
 		setResult(null)
-		setTimeout(() => {
-			const classificationResult = classifyText(documentText)
+		setError(null)
+		try {
+			const classificationResult = await classifyDocument(documentText)
 			setResult(classificationResult)
-			setIsLoading(false)
 			setClassified(true)
-		}, 1000)
+		} catch (err) {
+			setError(
+				err instanceof Error
+					? err.message
+					: 'An unknown error occurred.'
+			)
+			setClassified(false)
+		} finally {
+			setIsLoading(false)
+		}
 	}
 
 	const handleResetClassification = () => {
 		setDocumentText('')
 		setResult(null)
 		setClassified(false)
+		setError(null)
 	}
 
 	const getResultBadgeClass = (category: DocCategory | undefined) => {
@@ -116,6 +100,12 @@ const Task2_DocumentClassifier: React.FC<Task2Props> = ({ onComplete }) => {
 					)}
 				</motion.button>
 			</div>
+
+			{error && (
+				<div className="mt-4">
+					<Alert message={error} />
+				</div>
+			)}
 
 			<AnimatePresence>
 				{result && (
