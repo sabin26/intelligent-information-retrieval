@@ -20,6 +20,9 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 	)
 	const [searchAttempted, setSearchAttempted] = useState(false)
 	const [currentPage, setCurrentPage] = useState(1)
+	const [expandedAbstracts, setExpandedAbstracts] = useState<Set<string>>(
+		new Set()
+	)
 	const componentRootRef = useRef<HTMLDivElement>(null)
 
 	const handleSearch = useCallback(
@@ -32,6 +35,7 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 			setError(null)
 			setFoundPublications([])
 			setCurrentPage(1)
+			setExpandedAbstracts(new Set())
 
 			try {
 				const { publications } = await searchPublications(query)
@@ -55,6 +59,23 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 		setError(null)
 		setQuery('')
 		setCurrentPage(1)
+		setExpandedAbstracts(new Set())
+	}
+
+	const toggleAbstract = (publicationUrl: string) => {
+		setExpandedAbstracts((prev) => {
+			// If the clicked abstract is already expanded, collapse it
+			if (prev.has(publicationUrl)) {
+				return new Set()
+			}
+			// Otherwise, expand only this abstract (collapse all others)
+			return new Set([publicationUrl])
+		})
+	}
+
+	const truncateText = (text: string, maxLength: number = 150) => {
+		if (text.length <= maxLength) return text
+		return text.slice(0, maxLength) + '...'
 	}
 
 	// Pagination logic
@@ -232,6 +253,39 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 											</span>
 										))}
 									</div>
+
+									{pub.abstract && (
+										<div className="mt-3 pt-3 border-t border-slate-200">
+											<div className="text-sm text-slate-700">
+												<span className="font-medium text-slate-600">
+													Abstract:{' '}
+												</span>
+												{expandedAbstracts.has(
+													pub.publicationUrl
+												)
+													? pub.abstract
+													: truncateText(
+															pub.abstract
+													  )}
+											</div>
+											{pub.abstract.length > 150 && (
+												<button
+													onClick={() =>
+														toggleAbstract(
+															pub.publicationUrl
+														)
+													}
+													className="text-xs text-amber-600 hover:text-amber-700 font-medium mt-1 focus:outline-none"
+												>
+													{expandedAbstracts.has(
+														pub.publicationUrl
+													)
+														? 'Show less'
+														: 'Show more'}
+												</button>
+											)}
+										</div>
+									)}
 								</motion.div>
 							))}
 						</div>

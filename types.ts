@@ -20,6 +20,7 @@ export interface Author {
 export interface Publication {
 	title: string
 	authors: Author[]
+	abstract: string
 	date: string
 	publicationUrl: string
 	relevancyScore?: number
