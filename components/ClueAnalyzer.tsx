@@ -71,7 +71,7 @@ const Task2_DocumentClassifier: React.FC<Task2Props> = ({ onComplete }) => {
 
 			<div className="mb-6">
 				<div className="inline-flex items-center bg-sky-100 text-sky-800 text-sm font-bold px-4 py-2 rounded-full shadow-sm">
-					Naive Bayes Classifier
+					Naive Bayes Classifier + K-Fold Cross Validation
 				</div>
 			</div>
 
