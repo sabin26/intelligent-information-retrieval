@@ -9,10 +9,10 @@ const Header: React.FC = () => {
 					<BrainCircuitIcon className="w-10 h-10 text-slate-700" />
 					<div>
 						<h1 className="text-4xl font-bold text-slate-800 tracking-wider font-display">
-							Intelligent Information Retrieval
+							Search & Classify (S&C)
 						</h1>
 						<p className="mt-1 text-sm text-slate-500 tracking-widest font-bold">
-							MODULE: ST7071CEM
+							Find Smarter. Classify Faster.
 						</p>
 					</div>
 				</div>
