@@ -35,7 +35,7 @@ def build_index():
     print("Building positional index...")
     for doc_id, doc in enumerate(publications):
         author_names = ' '.join([author['name'] for author in doc['authors']])
-        content = doc['title'] + ' ' + author_names
+        content = doc['title'] + ' ' + author_names + ' ' + doc['abstract']
         
         # Store the original document metadata
         doc_store[doc_id] = doc

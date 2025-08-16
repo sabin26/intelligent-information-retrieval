@@ -31,6 +31,17 @@ def extract_authors_from_detail_page(soup, base_url):
                     authors_data.append({'name': clean_name, 'url': None})
     return authors_data
 
+# --- Extract abstract content from publication url ---
+def extract_abstract_from_detail_page(soup):
+    # Find the specific div containing the abstract
+    abstract_div = soup.find('div', class_='rendering_researchoutput_abstractportal')
+    if abstract_div:
+        # The text is within a nested 'textblock' div
+        text_block = abstract_div.find('div', class_='textblock')
+        if text_block:
+            return text_block.get_text(strip=True)
+    return '' # Return empty string if abstract is not found
+
 # --- Main Crawler Function ---
 async def crawl():
     """
@@ -119,10 +130,10 @@ async def crawl():
         pbar_pages.close()
         print(f"--- Discovery complete. Found {len(publications_to_scrape)} publications to scrape. ---")
 
-        # PHASE 2: SCRAPE AUTHOR DETAILS FOR EACH PUBLICATION
-        print("\n--- Phase 2: Scraping author details for each publication ---")
+        # PHASE 2: SCRAPE AUTHOR DETAILS AND ABSTRACT FOR EACH PUBLICATION
+        print("\n--- Phase 2: Scraping author details and abstract for each publication ---")
         final_publications = []
-        for pub_data in tqdm(publications_to_scrape, desc="Scraping Author Details"):
+        for pub_data in tqdm(publications_to_scrape, desc="Scraping Author Details and Abstract"):
             page = await context.new_page()
             try:
                 success = False
@@ -133,8 +144,8 @@ async def crawl():
                         await page.wait_for_selector('p.relations.persons', state='visible', timeout=30000)
                         
                         detail_soup = BeautifulSoup(await page.content(), 'html.parser')
-                        authors = extract_authors_from_detail_page(detail_soup, BASE_URL)
-                        pub_data['authors'] = authors
+                        pub_data['authors'] = extract_authors_from_detail_page(detail_soup, BASE_URL)
+                        pub_data['abstract'] = extract_abstract_from_detail_page(detail_soup)
                         success = True
                         break # Success, so exit retry loop
                     except Error as e:
@@ -146,8 +157,9 @@ async def crawl():
                             await asyncio.sleep(delay)
                 
                 if not success:
-                    print(f"All retries failed for {pub_data['url']}. Saving without author data.")
+                    print(f"All retries failed for {pub_data['url']}. Saving without author details and abstract.")
                     pub_data['authors'] = [] # Ensure authors key exists even on failure
+                    pub_data['abstract'] = '' # Ensure abstract key exists even on failure
                 
                 final_publications.append(pub_data)
             

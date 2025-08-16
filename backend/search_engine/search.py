@@ -12,6 +12,7 @@ class Author(TypedDict):
 class Publication(TypedDict):
     title: str
     authors: List[Author]
+    abstract: str
     date: str
     publicationUrl: str
     relevancyScore: float
@@ -135,6 +136,7 @@ class SearchEngine:
             publication: Publication = {
                 "title": doc_info.get("title", "No Title"),
                 "authors": formatted_authors,
+                "abstract": doc_info.get("abstract", ""),
                 "date": doc_info.get("date", "N/A"),
                 "publicationUrl": doc_info.get("url", ""),
                 "relevancyScore": round(score, 4)
@@ -170,6 +172,7 @@ def run_search_interface():
             for author in res['authors']:
                 profile_url = author['profileUrl'] if author['profileUrl'] else "No profile link"
                 print(f"     - {author['name']} ({profile_url})")
+            print(f"   Abstract: {res['abstract']}")
             print(f"   Publication URL: {res['publicationUrl']}")
             print(f"   Cosine Similarity Score: {res['relevancyScore']}")
 
