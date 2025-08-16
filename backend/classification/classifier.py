@@ -1,11 +1,13 @@
 import os
 import joblib
+import numpy as np
 import pandas as pd
+from sklearn.calibration import cross_val_predict
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, classification_report, f1_score, confusion_matrix
+from sklearn.model_selection import KFold
+from sklearn.metrics import accuracy_score, f1_score, classification_report, confusion_matrix
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -87,47 +89,44 @@ def plot_confusion_matrix(cm, class_names):
 
 def train_and_evaluate(texts: list, labels: list, label_names: list):
     """
-    Trains a classifier, evaluates its performance with detailed metrics
+    Trains a classifier, evaluates its performance using K-Fold Cross-Validation
     and plots, and returns the trained pipeline.
     """
-    # 1. Split data for evaluation
-    X_train, X_test, y_train, y_test = train_test_split(
-        texts, labels, test_size=0.2, random_state=42, stratify=labels
-    )
-    
-    # 2. Create the Scikit-learn Pipeline
+    # Create the Scikit-learn Pipeline
     # This chains the text vectorizer and the classifier together.
     # TfidfVectorizer handles tokenization, stopword removal, and TF-IDF weighting.
     model_pipeline = Pipeline([
         ('tfidf', TfidfVectorizer(stop_words='english', ngram_range=(1, 2), max_df=0.95, min_df=2)),
         ('clf', MultinomialNB(alpha=0.1))
     ])
+
+    print("\n--- Evaluating model with K-Fold Cross-Validation ---")
+
+    # Set up the cross-validation strategy
+    # shuffle=True randomizes the data before splitting.
+    kfold = KFold(n_splits=5, shuffle=True, random_state=42)
+
+    # Get cross-validated predictions
+    # This performs the K-fold loop and returns predictions for each data point
+    # when it was in the test set.
+    y_pred_cv = cross_val_predict(model_pipeline, np.array(texts), labels, cv=kfold)
+
+    # Calculate overall Accuracy and F1-Score from the CV predictions
+    accuracy = accuracy_score(labels, y_pred_cv)
+    f1 = f1_score(labels, y_pred_cv, average='macro') 
     
-    # 3. Train the model
-    print("\nTraining the model...")
-    model_pipeline.fit(X_train, y_train)
-    
-    # 4. Evaluate the model on the test set
-    print("\nEvaluating model performance...")
-    y_pred = model_pipeline.predict(X_test)
-    
-    # Calculate and print Accuracy and F1-Score
-    accuracy = accuracy_score(y_test, y_pred)
-    # Use 'macro' average for F1-score to treat all classes equally
-    f1 = f1_score(y_test, y_pred, average='macro') 
-    
-    print(f"Accuracy on test set: {accuracy:.4f}")
-    print(f"Macro F1-Score on test set: {f1:.4f}")
+    print(f"Cross-Validated Accuracy: {accuracy:.4f}")
+    print(f"Cross-Validated Macro F1-Score: {f1:.4f}")
     
     # Print the detailed Classification Report
     print("\nClassification Report:")
-    print(classification_report(y_test, y_pred, target_names=label_names))
+    print(classification_report(labels, y_pred_cv, target_names=label_names))
     
     # Calculate and plot the Confusion Matrix
-    cm = confusion_matrix(y_test, y_pred)
+    cm = confusion_matrix(labels, y_pred_cv)
     plot_confusion_matrix(cm, label_names)
     
-    # 5. Now, train the final model on ALL data for production use
+    # Now, train the final model on all data for production use
     print("\nRetraining the model on the full dataset for production...")
     final_model = model_pipeline.fit(texts, labels)
     
