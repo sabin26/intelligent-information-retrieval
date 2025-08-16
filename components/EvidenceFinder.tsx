@@ -241,7 +241,7 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 														href={author.profileUrl}
 														target="_blank"
 														rel="noopener noreferrer"
-														className="hover:underline"
+														className="underline hover:text-amber-800"
 													>
 														{author.name}
 													</a>
