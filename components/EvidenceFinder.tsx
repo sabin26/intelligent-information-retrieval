@@ -205,7 +205,7 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 									className="p-4 border border-slate-300 rounded-lg bg-white shadow"
 									initial={{ opacity: 0, x: -20 }}
 									animate={{ opacity: 1, x: 0 }}
-									transition={{ delay: index * 0.1 }}
+									transition={{ delay: index * 0.2 }}
 								>
 									<div className="flex justify-between items-start">
 										<a
