@@ -3,5 +3,14 @@
 	"compatibility_date": "2025-08-17",
 	"assets": {
 		"directory": "./dist"
+	},
+	"workers_dev": false,
+	"preview_urls": false,
+	"route": {
+		"pattern": "ir.sabin-neupane.com.np",
+		"custom_domain": true
+	},
+	"placement": {
+		"mode": "smart"
 	}
 }
