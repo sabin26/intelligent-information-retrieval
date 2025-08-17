@@ -1,6 +1,6 @@
 import { Publication, ClassificationResult, DocCategory } from '../types'
 
-const API_BASE_URL = 'http://127.0.0.1:8000' // Default for FastAPI
+const API_BASE_URL = 'https://retrieval.sabin-neupane.com.np'
 
 export const searchPublications = async (
 	query: string
