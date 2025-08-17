@@ -36,7 +36,8 @@ app = FastAPI(lifespan=lifespan)
 # List of allowed origins
 origins = [
     "http://localhost:5173",  # React/Vite frontend
-    "http://127.0.0.1:5173"   # In case vite serves with 127.0.0.1
+    "http://127.0.0.1:5173",   # In case vite serves with 127.0.0.1
+    "https://ir.sabin-neupane.com.np"
 ]
 
 # Add the CORS middleware
