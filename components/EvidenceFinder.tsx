@@ -9,7 +9,7 @@ interface Task1Props {
 	onComplete: () => void
 }
 
-const ITEMS_PER_PAGE = 20
+const PAGE_SIZE_OPTIONS = [10, 25, 50]
 
 const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 	const [query, setQuery] = useState('')
@@ -20,6 +20,7 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 	)
 	const [searchAttempted, setSearchAttempted] = useState(false)
 	const [currentPage, setCurrentPage] = useState(1)
+	const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0])
 	const [expandedAbstracts, setExpandedAbstracts] = useState<Set<string>>(
 		new Set()
 	)
@@ -62,6 +63,11 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 		setExpandedAbstracts(new Set())
 	}
 
+	const handlePageSizeChange = (newPageSize: number) => {
+		setPageSize(newPageSize)
+		setCurrentPage(1) // Reset to first page when changing page size
+	}
+
 	const toggleAbstract = (publicationUrl: string) => {
 		setExpandedAbstracts((prev) => {
 			// If the clicked abstract is already expanded, collapse it
@@ -79,9 +85,9 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 	}
 
 	// Pagination logic
-	const totalPages = Math.ceil(foundPublications.length / ITEMS_PER_PAGE)
-	const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
-	const endIndex = startIndex + ITEMS_PER_PAGE
+	const totalPages = Math.ceil(foundPublications.length / pageSize)
+	const startIndex = (currentPage - 1) * pageSize
+	const endIndex = startIndex + pageSize
 	const currentPublications = foundPublications.slice(startIndex, endIndex)
 
 	const handlePageChange = (newPage: number) => {
@@ -198,6 +204,36 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 								publication(s) found.
 							</p>
 						</div>
+
+						{/* Page Size Selector */}
+						<div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-200">
+							<div className="flex items-center gap-2">
+								<span className="text-sm font-medium text-slate-600">
+									Results per page:
+								</span>
+								<select
+									value={pageSize}
+									onChange={(e) =>
+										handlePageSizeChange(
+											Number(e.target.value)
+										)
+									}
+									className="px-3 py-1 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white"
+								>
+									{PAGE_SIZE_OPTIONS.map((size) => (
+										<option key={size} value={size}>
+											{size}
+										</option>
+									))}
+								</select>
+							</div>
+							<div className="text-sm text-slate-600">
+								Showing {startIndex + 1}-
+								{Math.min(endIndex, foundPublications.length)}{' '}
+								of {foundPublications.length} results
+							</div>
+						</div>
+
 						<div className="space-y-4 mt-4">
 							{currentPublications.map((pub, index) => (
 								<motion.div
