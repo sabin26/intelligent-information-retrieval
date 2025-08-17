@@ -54,33 +54,43 @@ async def crawl():
     """
     print("Starting crawler with Playwright...")
 
-    # robots.txt parsing
-    rp = robotparser.RobotFileParser()
-    robots_url = urljoin(BASE_URL, 'robots.txt')
-    print(f"Fetching and parsing robots.txt from: {robots_url}")
-    try:
-        rp.set_url(robots_url)
-        rp.read()
-        print("robots.txt parsed successfully.")
-    except Exception as e:
-        print(f"Warning: Could not fetch or parse robots.txt. Proceeding with default settings. Error: {e}")
-    
-    # Determine the effective crawl delay from robots.txt or config
-    crawl_delay = rp.crawl_delay(USER_AGENT)
-    robots_delay = int(crawl_delay) if crawl_delay else None
-    user_min_delay = 5
-    
-    # Use the delay from robots.txt if it's specified and longer than our minimum
-    if robots_delay and robots_delay > user_min_delay:
-        effective_delay_min = robots_delay
-        print(f"Using Crawl-Delay from robots.txt: {effective_delay_min} seconds.")
-    else:
-        effective_delay_min = user_min_delay
-        print(f"Using configured minimum delay: {effective_delay_min} seconds.")
-
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         context = await browser.new_context(user_agent=USER_AGENT)
+
+        # robots.txt parsing
+        rp = robotparser.RobotFileParser()
+        robots_url = urljoin(BASE_URL, 'robots.txt')
+        print(f"Fetching robots.txt from: {robots_url}")
+        
+        page_robots = await context.new_page()
+        try:
+            await page_robots.goto(robots_url, timeout=PAGE_TIMEOUT)
+            robots_content = await page_robots.content()
+            soup_robots = BeautifulSoup(robots_content, 'html.parser')
+            robots_text = soup_robots.get_text()
+
+            print("\n--- Actual robots.txt content being parsed ---")
+            print(robots_text)
+            print("----------------------------------------------\n")
+            
+            rp.parse(robots_text.splitlines())
+            print("robots.txt parsed successfully.")
+        except Error as e:
+            print(f"Warning: Could not fetch or parse robots.txt with Playwright. Proceeding with default settings. Error: {e}")
+        finally:
+            await page_robots.close()
+        
+        crawl_delay = rp.crawl_delay(USER_AGENT)
+        robots_delay = int(crawl_delay) if crawl_delay else None
+        user_min_delay = 2
+        
+        if robots_delay and robots_delay > user_min_delay:
+            effective_delay_min = robots_delay
+            print(f"Using Crawl-Delay from robots.txt: {effective_delay_min} seconds.")
+        else:
+            effective_delay_min = user_min_delay
+            print(f"Using configured minimum delay: {effective_delay_min} seconds.")
 
         # Ensure the data directory exists
         data_dir = os.path.dirname(CRAWLED_DATA_FILE)
