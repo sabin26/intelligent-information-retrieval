@@ -4,12 +4,16 @@ import os
 import random
 from collections import deque
 from urllib.parse import urljoin
+from urllib import robotparser
 
 from bs4 import BeautifulSoup, Tag
 from playwright.async_api import async_playwright, Error
 from tqdm import tqdm
 
-from config import SEED_URL, BASE_URL, MAX_RETRIES, PAGE_TIMEOUT, RANDOM_DELAY_RANGE, CRAWLED_DATA_FILE
+from config import SEED_URL, BASE_URL, MAX_RETRIES, PAGE_TIMEOUT, CRAWLED_DATA_FILE
+
+# Define a single User-Agent constant to be used by both Playwright and the robotparser
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
 
 # --- Extract author name and profile url from publication url ---
 def extract_authors_from_detail_page(soup, base_url):
@@ -45,16 +49,38 @@ def extract_abstract_from_detail_page(soup):
 # --- Main Crawler Function ---
 async def crawl():
     """
-    Crawls the Coventry University publications portal starting from a seed URL.
+    Crawls the Coventry University publications portal, respecting robots.txt.
     It follows a BFS approach for pagination and extracts publication details.
     """
     print("Starting crawler with Playwright...")
 
+    # robots.txt parsing
+    rp = robotparser.RobotFileParser()
+    robots_url = urljoin(BASE_URL, 'robots.txt')
+    print(f"Fetching and parsing robots.txt from: {robots_url}")
+    try:
+        rp.set_url(robots_url)
+        rp.read()
+        print("robots.txt parsed successfully.")
+    except Exception as e:
+        print(f"Warning: Could not fetch or parse robots.txt. Proceeding with default settings. Error: {e}")
+    
+    # Determine the effective crawl delay from robots.txt or config
+    crawl_delay = rp.crawl_delay(USER_AGENT)
+    robots_delay = int(crawl_delay) if crawl_delay else None
+    user_min_delay = 5
+    
+    # Use the delay from robots.txt if it's specified and longer than our minimum
+    if robots_delay and robots_delay > user_min_delay:
+        effective_delay_min = robots_delay
+        print(f"Using Crawl-Delay from robots.txt: {effective_delay_min} seconds.")
+    else:
+        effective_delay_min = user_min_delay
+        print(f"Using configured minimum delay: {effective_delay_min} seconds.")
+
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
-        context = await browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
-        )
+        context = await browser.new_context(user_agent=USER_AGENT)
 
         # Ensure the data directory exists
         data_dir = os.path.dirname(CRAWLED_DATA_FILE)
@@ -71,6 +97,13 @@ async def crawl():
 
         while queue:
             current_url = queue.popleft()
+
+            # Check if URL is allowed by robots.txt before fetching
+            if not rp.can_fetch(USER_AGENT, current_url):
+                print(f"\nSkipping disallowed URL (from robots.txt): {current_url}")
+                pbar_pages.update(1)
+                continue
+
             page = await context.new_page()
             
             success = False
@@ -90,8 +123,8 @@ async def crawl():
                     print(f"\nAttempt {attempt + 1}/{MAX_RETRIES} failed for {current_url}: {e}")
                     if attempt < MAX_RETRIES - 1:
                         print('Retrying...')
-                        # Wait before retrying
-                        delay = random.uniform(*RANDOM_DELAY_RANGE)
+                        # Wait before retrying, respecting the effective delay
+                        delay = random.uniform(effective_delay_min, effective_delay_min + 2.0)
                         await asyncio.sleep(delay)
 
             if not success:
@@ -123,8 +156,8 @@ async def crawl():
             pbar_pages.update(1)
             await page.close()
 
-            # Polite crawling: wait before the next request
-            delay = random.uniform(*RANDOM_DELAY_RANGE)
+            # Polite crawling: wait before the next request using the effective delay
+            delay = random.uniform(effective_delay_min, effective_delay_min + 2.0)
             await asyncio.sleep(delay)
         
         pbar_pages.close()
@@ -134,6 +167,11 @@ async def crawl():
         print("\n--- Phase 2: Scraping author details and abstract for each publication ---")
         final_publications = []
         for pub_data in tqdm(publications_to_scrape, desc="Scraping Author Details and Abstract"):
+            # Check if URL is allowed by robots.txt before fetching
+            if not rp.can_fetch(USER_AGENT, pub_data['url']):
+                print(f"\nSkipping disallowed URL (from robots.txt): {pub_data['url']}")
+                continue
+
             page = await context.new_page()
             try:
                 success = False
@@ -152,8 +190,8 @@ async def crawl():
                         print(f"\nAttempt {attempt + 1}/{MAX_RETRIES} failed for {pub_data['url']}: {e}")
                         if attempt < MAX_RETRIES - 1:
                             print('Retrying...')
-                            # Wait before retrying
-                            delay = random.uniform(*RANDOM_DELAY_RANGE)
+                            # Wait before retrying, respecting the effective delay
+                            delay = random.uniform(effective_delay_min, effective_delay_min + 2.0)
                             await asyncio.sleep(delay)
                 
                 if not success:
@@ -166,7 +204,7 @@ async def crawl():
             finally:
                 await page.close()
                 # --- RANDOMIZED DELAY BETWEEN EACH DETAIL PAGE SCRAPE ---
-                delay = random.uniform(*RANDOM_DELAY_RANGE)
+                delay = random.uniform(effective_delay_min, effective_delay_min + 2.0)
                 await asyncio.sleep(delay)
         
         print("\nClosing Playwright browser.")
