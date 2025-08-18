@@ -12,13 +12,25 @@ export const searchPublications = async (
 		)
 
 		if (!response.ok) {
-			const errorData = await response.json().catch(() => ({
-				detail: `API request failed with status ${response.status}`,
-			}))
-			throw new Error(
+			const errorData = await response.json().catch(() => ({}))
+			let errorMsg =
 				errorData.detail ||
-					`API request failed with status ${response.status}`
-			)
+				errorData.message ||
+				errorData.error ||
+				`API request failed with status ${response.status}`
+
+			// Check if errorData.detail is an array with msg field(s)
+			if (
+				Array.isArray(errorData.detail) &&
+				errorData.detail.length > 0
+			) {
+				const firstMsg = errorData.detail[0]?.msg
+				if (firstMsg) {
+					errorMsg = firstMsg
+				}
+			}
+
+			throw new Error(errorMsg)
 		}
 
 		const data = await response.json()
@@ -50,13 +62,25 @@ export const classifyDocument = async (
 		})
 
 		if (!response.ok) {
-			const errorData = await response.json().catch(() => ({
-				detail: `API request failed with status ${response.status}`,
-			}))
-			throw new Error(
+			const errorData = await response.json().catch(() => ({}))
+			let errorMsg =
 				errorData.detail ||
-					`API request failed with status ${response.status}`
-			)
+				errorData.message ||
+				errorData.error ||
+				`API request failed with status ${response.status}`
+
+			// Check if errorData.detail is an array with msg field(s)
+			if (
+				Array.isArray(errorData.detail) &&
+				errorData.detail.length > 0
+			) {
+				const firstMsg = errorData.detail[0]?.msg
+				if (firstMsg) {
+					errorMsg = firstMsg
+				}
+			}
+
+			throw new Error(errorMsg)
 		}
 
 		const result: ClassificationResult = await response.json()
