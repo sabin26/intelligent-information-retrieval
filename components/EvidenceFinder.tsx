@@ -137,22 +137,13 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 						onChange={(e) => setQuery(e.target.value)}
 						placeholder="Search for publications..."
 						className="w-full pl-10 pr-4 py-2.5 border border-slate-400 rounded-md shadow-inner bg-slate-50 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition disabled:opacity-60 disabled:bg-slate-100"
-						disabled={
-							isLoading ||
-							(searchAttempted &&
-								(foundPublications.length > 0 || !!error))
-						}
+						disabled={isLoading}
 					/>
 				</div>
 				<motion.button
 					type="submit"
 					className="px-6 py-2.5 bg-slate-800 text-white font-semibold rounded-md shadow-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
-					disabled={
-						isLoading ||
-						(searchAttempted &&
-							(foundPublications.length > 0 || !!error)) ||
-						!query.trim()
-					}
+					disabled={isLoading || !query.trim()}
 					whileHover={{ scale: 1.05 }}
 					whileTap={{ scale: 0.95 }}
 				>
@@ -359,15 +350,6 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 
 			{searchAttempted && !isLoading && (
 				<div className="text-center mt-8 flex justify-center gap-4">
-					<motion.button
-						onClick={handleResetSearch}
-						className="px-8 py-3 bg-slate-600 text-white font-bold rounded-lg shadow-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-colors font-display tracking-wider"
-						whileHover={{ scale: 1.05 }}
-						whileTap={{ scale: 0.95 }}
-					>
-						Search Again
-					</motion.button>
-
 					{foundPublications.length > 0 && (
 						<motion.button
 							onClick={onComplete}
