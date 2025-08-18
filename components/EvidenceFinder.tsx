@@ -139,7 +139,8 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 						className="w-full pl-10 pr-4 py-2.5 border border-slate-400 rounded-md shadow-inner bg-slate-50 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition disabled:opacity-60 disabled:bg-slate-100"
 						disabled={
 							isLoading ||
-							(searchAttempted && foundPublications.length > 0)
+							(searchAttempted &&
+								(foundPublications.length > 0 || !!error))
 						}
 					/>
 				</div>
@@ -148,7 +149,8 @@ const Task1_SearchEngine: React.FC<Task1Props> = ({ onComplete }) => {
 					className="px-6 py-2.5 bg-slate-800 text-white font-semibold rounded-md shadow-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
 					disabled={
 						isLoading ||
-						(searchAttempted && foundPublications.length > 0) ||
+						(searchAttempted &&
+							(foundPublications.length > 0 || !!error)) ||
 						!query.trim()
 					}
 					whileHover={{ scale: 1.05 }}
