@@ -7,7 +7,7 @@ from text_processor import process_text
 
 def build_index():
     """
-    Builds field-based positional indexes and TF-IDF models from crawled data.
+    Builds a positional index and a TF-IDF model from crawled data.
 
     The function creates and saves four main components:
     1. Positional Index: A map from a term to a dictionary, which in turn maps
@@ -18,41 +18,33 @@ def build_index():
     4. TF-IDF Vectorizer: The fitted TfidfVectorizer object, essential for
        transforming new queries consistently.
     """
-    print("Starting field-based indexer...")
+    print("Starting indexer for TF-IDF and Positional Index...")
 
     try:
         with open(CRAWLED_DATA_FILE, 'r', encoding='utf-8') as f:
             publications = json.load(f)
     except FileNotFoundError:
         print(f"Error: Crawled data file not found at {CRAWLED_DATA_FILE}.")
+        print("Please run the crawler first using 'python main.py crawl'.")
         return
 
-    # Separate indexes for different fields
     positional_index = {}
     doc_store = {}
-    
-    # Separate corpora for different fields
-    title_corpus = []
-    author_corpus = []
-    abstract_corpus = []
+    corpus = [] # List of document texts for the vectorizer
 
-    print("Building field-based indexes...")
+    print("Building positional index...")
     for doc_id, doc in enumerate(publications):
+        author_names = ' '.join([author['name'] for author in doc['authors']])
+        content = doc['title'] + ' ' + author_names + ' ' + doc['abstract']
+        
+        # Store the original document metadata
         doc_store[doc_id] = doc
         
-        # Separate field content
-        title = doc['title']
-        author_names = ' '.join([author['name'] for author in doc['authors']])
-        abstract = doc['abstract']
-        
-        # Add to respective corpora
-        title_corpus.append(title)
-        author_corpus.append(author_names)
-        abstract_corpus.append(abstract)
-        
-        # Build positional index for combined content (for phrase queries)
-        combined_content = title + ' ' + author_names + ' ' + abstract
-        tokens = process_text(combined_content)
+        # Add the raw content to the corpus for TF-IDF vectorization
+        corpus.append(content)
+
+        # Process the text to get tokens for the positional index
+        tokens = process_text(content)
         
         for pos, token in enumerate(tokens):
             if token not in positional_index:
@@ -61,35 +53,31 @@ def build_index():
                 positional_index[token][doc_id] = []
             positional_index[token][doc_id].append(pos)
 
-    # Create separate TF-IDF vectorizers for each field
-    print("\nCreating field-specific TF-IDF models...")
+    # --- TF-IDF Vectorization ---
+    print("\nCreating TF-IDF model...")
+    # We use the same text_processor for tokenization to ensure consistency
+    # but let TfidfVectorizer handle its own stopword removal and lowercasing.
+    vectorizer = TfidfVectorizer(
+        stop_words='english',
+        lowercase=True,
+        ngram_range=(1, 2)
+    )
     
-    title_vectorizer = TfidfVectorizer(stop_words='english', lowercase=True, ngram_range=(1, 2))
-    author_vectorizer = TfidfVectorizer(stop_words='english', lowercase=True, ngram_range=(1, 2))
-    abstract_vectorizer = TfidfVectorizer(stop_words='english', lowercase=True, ngram_range=(1, 2))
-    
-    title_matrix = title_vectorizer.fit_transform(title_corpus)
-    author_matrix = author_vectorizer.fit_transform(author_corpus)
-    abstract_matrix = abstract_vectorizer.fit_transform(abstract_corpus)
-    
-    print(f"Title TF-IDF matrix: {title_matrix.shape}")
-    print(f"Author TF-IDF matrix: {author_matrix.shape}")
-    print(f"Abstract TF-IDF matrix: {abstract_matrix.shape}")
+    # Fit the vectorizer on the whole corpus and transform it into a matrix
+    tfidf_matrix = vectorizer.fit_transform(corpus)
+    print(f"TF-IDF matrix created with shape: {tfidf_matrix.shape}")
 
-    # Save all components
+    # Save all components needed for searching
     index_data = {
         'positional_index': positional_index,
         'doc_store': doc_store,
-        'title_matrix': title_matrix,
-        'author_matrix': author_matrix,
-        'abstract_matrix': abstract_matrix,
-        'title_vectorizer': title_vectorizer,
-        'author_vectorizer': author_vectorizer,
-        'abstract_vectorizer': abstract_vectorizer
+        'tfidf_matrix': tfidf_matrix,
+        'vectorizer': vectorizer
     }
     
     joblib.dump(index_data, INDEX_FILE)
-    print(f"\nField-based indexing complete. Indexed {len(publications)} documents.")
+    
+    print(f"\nIndexing complete. Indexed {len(publications)} documents.")
     print(f"Index saved to {INDEX_FILE}")
 
 if __name__ == '__main__':
