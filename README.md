@@ -26,7 +26,7 @@ This will:
 
 ### Step 2: Build Search Index
 
-After crawling, build the search index:
+After crawling, build the search indexes:
 
 ```bash
 cd backend/search_engine
@@ -35,9 +35,9 @@ python indexer.py
 
 This will:
 
--   Process the crawled data and create positional index
--   Build TF-IDF matrix combining title, author, and abstract
--   Save the index to `backend/search_engine/data/index.joblib`
+-   Process the crawled data and create field-based positional indexes
+-   Build TF-IDF matrices for titles, authors, and abstracts
+-   Save the indexes to `backend/search_engine/data/index.joblib`
 
 ### Step 3: Train Document Classifier
 
@@ -118,7 +118,7 @@ backend/
 ├── search_engine/
 │   └── data/
 │       ├── crawled_data.json     # Raw crawled publication data
-│       └── index.joblib          # Search index and TF-IDF model
+│       └── index.joblib          # Search indexes and TF-IDF models
 └── classification/
     └── data/
         ├── cleaned_data.csv      # Training data for classifier
