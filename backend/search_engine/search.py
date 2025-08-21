@@ -18,7 +18,7 @@ class Publication(TypedDict):
     publicationUrl: str
     relevancyScore: float
 
-class SearchEngine:
+class FieldBasedSearchEngine:
     """
     The main search engine class that handles field-based searching with weighted scoring.
     Supports both phrase queries and bag-of-words queries with field-specific weighting.
@@ -283,7 +283,7 @@ def run_search_interface():
     """
     Runs the main interactive search loop with field-based search capabilities.
     """
-    engine = SearchEngine()
+    engine = FieldBasedSearchEngine()
     
     print("\n--- Coventry University Publication Search (Field-Based) ---")
     print("Enter a query. Use \"quotes\" for exact phrase searches.")
@@ -317,6 +317,9 @@ def run_search_interface():
             print(f"   Abstract: {res['abstract'][:200]}...")  # Truncate abstract
             print(f"   Publication URL: {res['publicationUrl']}")
             print(f"   Relevance Score: {res['relevancyScore']}")
+
+# For backward compatibility
+SearchEngine = FieldBasedSearchEngine
 
 if __name__ == '__main__':
     run_search_interface()
