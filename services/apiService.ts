@@ -34,7 +34,15 @@ export const searchPublications = async (
 		}
 
 		const data = await response.json()
-		return { publications: data.results || [] }
+		const allPublications: Publication[] = data.results || []
+
+		// Filter out publications with relevancy score that rounds to 0.00 when displayed with 2 decimal places
+		const filteredPublications = allPublications.filter(
+			(pub: Publication) =>
+				Math.round(pub.relevancyScore * 100) / 100 > 0.0
+		)
+
+		return { publications: filteredPublications }
 	} catch (error) {
 		console.error('Error searching publications:', error)
 		throw new Error(
